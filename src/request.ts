@@ -19,7 +19,7 @@ export default class Request {
 		this.headers = fromRawHeaders(req.rawHeaders);
 	}
 
-	async buffer(): Promise<Buffer> {
+	buffer(): Promise<Buffer> {
 		let bytes = 0;
 		const req = this[RequestSymbol];
 		const buffers: Buffer[] = [];

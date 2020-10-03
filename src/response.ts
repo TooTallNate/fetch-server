@@ -6,7 +6,6 @@ import { ResponseSymbol } from './types';
 export default class Response {
 	readonly headers: Headers;
 	status: number;
-	finished: boolean;
 	body?: string | Buffer | Readable;
 	[ResponseSymbol]: http.ServerResponse;
 
@@ -14,7 +13,6 @@ export default class Response {
 		this.status = 200;
 		this.headers = new Headers();
 		this.body = undefined;
-		this.finished = false;
 		this[ResponseSymbol] = res;
 	}
 
@@ -22,15 +20,20 @@ export default class Response {
 		return true;
 	}
 
-	flush() {
+	send() {
 		const res = this[ResponseSymbol];
+		if (res.headersSent) return;
+
 		res.statusCode = this.status;
 		for (const [ name, value ] of this.headers) {
 			res.setHeader(name, value);
 		}
 		if (Buffer.isBuffer(this.body) || typeof this.body === 'string') {
 			res.end(this.body);
+		} else if (this.body instanceof Readable) {
+			this.body.pipe(res);
+		} else {
+			res.end();
 		}
-		this.finished = true;
 	}
 }

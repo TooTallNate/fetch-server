@@ -14,8 +14,8 @@ export default function createFetchServer(fn: FetchHandler) {
 		Promise.resolve()
 			.then(() => fn(request, response))
 			.then(() => {
-				if (!response.finished) {
-					return response.flush();
+				if (!res.headersSent) {
+					return response.send();
 				}
 			})
 			.catch((err) => {
