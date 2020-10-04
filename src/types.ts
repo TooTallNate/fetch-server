@@ -5,7 +5,7 @@ import Headers from './headers';
 export type FetchHandler = (
 	req: Request,
 	res: Response
-) => void | Promise<void>;
+) => any | Promise<any>;
 
 export const RequestSymbol = Symbol('RequestSymbol');
 export const ResponseSymbol = Symbol('ResponseSymbol');

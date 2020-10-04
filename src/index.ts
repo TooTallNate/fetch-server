@@ -13,7 +13,10 @@ export default function createFetchServer(fn: FetchHandler) {
 		const response = new Response(res)
 		Promise.resolve()
 			.then(() => fn(request, response))
-			.then(() => {
+			.then((body: any) => {
+				if (typeof body !== 'undefined') {
+					response.body = body;
+				}
 				if (!res.headersSent) {
 					return response.send();
 				}
