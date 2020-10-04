@@ -11,12 +11,15 @@ export default class Request {
 
 	constructor(req: http.IncomingMessage) {
 		this[RequestSymbol] = req;
-		const proto = req.headers['x-forwarded-proto'] || 'http';
-		const host =
-			req.headers['x-forwarded-host'] || req.headers.host || 'localhost';
+		this.headers = fromRawHeaders(req.rawHeaders);
+		const proto = this.headers.get('x-forwarded-proto') || 'http';
+		let host =
+			this.headers.get('x-forwarded-host') || this.headers.get('host') || 'localhost';
+		if (host.startsWith(':')) {
+			host = `localhost${host}`;
+		}
 		this.url = new URL(req.url || '/', `${proto}://${host}`);
 		this.method = req.method || 'GET';
-		this.headers = fromRawHeaders(req.rawHeaders);
 	}
 
 	buffer(): Promise<Buffer> {
