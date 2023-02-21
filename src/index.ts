@@ -1,24 +1,51 @@
-import http from 'http';
-import https from 'https';
-import Request from './request';
-import Response from './response';
-import { FetchHandler } from './types';
+import http from 'node:http';
+import { Readable } from 'node:stream';
 
-export * from './types';
-export { Request, Response };
+export type Handler = (request: Request) => Response | Promise<Response>;
 
-export default function createFetchServer(fn: FetchHandler) {
-	function handler(req: http.IncomingMessage, res: http.ServerResponse) {
-		const request = new Request(req);
-		const response = new Response(res)
-		Promise.resolve()
-			.then(() => fn(request, response))
-			.then((body: any) => {
-				if (typeof body !== 'undefined') {
-					response.body = body;
+export default function createFetchServer(handler: Handler) {
+	return (req: http.IncomingMessage, res: http.ServerResponse) => {
+		const method = req.method || 'GET';
+		const headers = new Headers();
+		for (const [key, value] of Object.entries(req.headers)) {
+			if (Array.isArray(value)) {
+				for (const v of value) {
+					headers.append(key, v);
 				}
-				if (!res.headersSent) {
-					return response.send();
+			} else if (typeof value === 'string') {
+				headers.set(key, value);
+			}
+		}
+
+		// TODO: determine `https`
+		const proto = headers.get('x-forwarded-proto') || 'http';
+		const host = headers.get('x-forwarded-host') || headers.get('host');
+
+		const base = `${proto}://${host}`;
+		const url = new URL(req.url || '/', base);
+		const request = new Request(url.href, {
+			method,
+			headers,
+			// @ts-ignore
+			body:
+				method === 'GET' || method === 'HEAD'
+					? undefined
+					: Readable.toWeb(req),
+		});
+
+		Promise.resolve()
+			.then(() => handler(request))
+			.then((response) => {
+				res.statusCode = response.status;
+				res.statusMessage = response.statusText;
+				response.headers.forEach((value, key) => {
+					res.setHeader(key, value);
+				});
+				if (response.body) {
+					// @ts-ignore
+					Readable.fromWeb(response.body).pipe(res);
+				} else {
+					res.end();
 				}
 			})
 			.catch((err) => {
@@ -28,7 +55,5 @@ export default function createFetchServer(fn: FetchHandler) {
 					res.end('Internal server error\n');
 				}
 			});
-	}
-
-	return handler;
+	};
 }

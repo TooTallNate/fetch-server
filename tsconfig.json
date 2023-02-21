@@ -4,7 +4,7 @@
     "module": "CommonJS",
     "target": "es2015",
     "esModuleInterop": true,
-    "lib": ["esnext"],
+    "lib": ["esnext", "DOM"],
     "outDir": "dist",
     "sourceMap": true,
     "declaration": true
