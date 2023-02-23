@@ -1,6 +1,6 @@
 {
   "name": "fetch-server",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "HTTP server framework that mirrors the Fetch API",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
