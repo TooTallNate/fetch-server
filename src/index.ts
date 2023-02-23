@@ -1,5 +1,5 @@
 import http from 'node:http';
-import { Readable } from 'node:stream';
+import { Readable, Writable } from 'node:stream';
 
 export type Handler = (request: Request) => Response | Promise<Response>;
 
@@ -42,8 +42,7 @@ export default function createFetchServer(handler: Handler) {
 					res.setHeader(key, value);
 				});
 				if (response.body) {
-					// @ts-ignore
-					Readable.fromWeb(response.body).pipe(res);
+					return writeReadableStreamToWritable(response.body, res);
 				} else {
 					res.end();
 				}
@@ -56,4 +55,37 @@ export default function createFetchServer(handler: Handler) {
 				}
 			});
 	};
+}
+
+async function writeReadableStreamToWritable(
+	stream: ReadableStream,
+	writable: Writable
+) {
+	let reader = stream.getReader();
+
+	async function read() {
+		let { done, value } = await reader.read();
+
+		if (done) {
+			writable.end();
+			return;
+		}
+
+		writable.write(value);
+
+		// If the stream is flushable, flush it to allow streaming to continue.
+		let flushable = writable as { flush?: Function };
+		if (typeof flushable.flush === 'function') {
+			flushable.flush();
+		}
+
+		await read();
+	}
+
+	try {
+		await read();
+	} catch (error: any) {
+		writable.destroy(error);
+		throw error;
+	}
 }
