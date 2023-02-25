@@ -1,7 +1,7 @@
 
 Deploy to a Vercel API endpoint:
 
-```
+```ts
 import fetchServer from 'fetch-server';
 
 export default fetchServer(async req => {
@@ -14,7 +14,7 @@ export default fetchServer(async req => {
 
 Standalone:
 
-```
+```ts
 import http from 'node:http';
 import fetchServer from 'fetch-server';
 
